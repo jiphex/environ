@@ -1,7 +1,7 @@
 // Package environ is a general libray for taking data from the "environment"
 // and parsing it into a struct.
 //
-// This package should be generally usable outside of the AutoKube ecosystem 
+// This package should be generally usable outside of the AutoKube ecosystem
 // for Go programs which need to load a large number of environment variables
 // into a struct.
 package environ
@@ -93,8 +93,13 @@ func UnmarshalEnvironment(lookupenv LookupEnvironmentFunc, into interface{}) err
 	for i := 0; i < st.NumField(); i++ {
 		svf := st.Field(i)
 		stv := parseStateVar(svf.Tag)
+		if svf.Type.Kind() == reflect.Ptr {
+			// Need to recurse into pointer
+			log.Debugf("from %s recursing into field %d: %s", st, i, svf.Type)
+			UnmarshalEnvironment(lookupenv, sv.Field(i).Interface())
+		}
 		if eval, isset := lookupenv(stv.EnvironmentVariable); isset {
-			log.Tracef("environment variable is set: %s", stv.EnvironmentVariable)
+			log.Debugf("environment variable is set: %s", stv.EnvironmentVariable)
 			t := svf.Type
 			switch {
 			case t.Kind() == reflect.Bool:
@@ -106,9 +111,9 @@ func UnmarshalEnvironment(lookupenv LookupEnvironmentFunc, into interface{}) err
 						log.Tracef("value set with zero length, setting to false")
 						sv.Field(i).SetBool(false)
 					} else {
-							var xb bool
-							xb, err = strconv.ParseBool(eval)
-							sv.Field(i).SetBool(xb)
+						var xb bool
+						xb, err = strconv.ParseBool(eval)
+						sv.Field(i).SetBool(xb)
 					}
 				}
 			case t.Kind() == reflect.String:
@@ -126,9 +131,13 @@ func UnmarshalEnvironment(lookupenv LookupEnvironmentFunc, into interface{}) err
 					xi, err = strconv.Atoi(eval)
 					sv.Field(i).SetInt(int64(xi))
 				}
+			case t.Kind() == reflect.Struct:
+				panic("struct")
 			default:
 				log.Fatalf("unimplemented type: %s", t)
 			}
+		} else {
+			log.Tracef("environment variable unset: %s", stv.EnvironmentVariable)
 		}
 	}
 	return err
