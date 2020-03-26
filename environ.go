@@ -95,7 +95,7 @@ func UnmarshalEnvironment(lookupenv LookupEnvironmentFunc, into interface{}) err
 		stv := parseStateVar(svf.Tag)
 		if svf.Type.Kind() == reflect.Ptr {
 			// Need to recurse into pointer
-			log.Debugf("from %s recursing into field %d: %s", st, i, svf.Type)
+			log.Tracef("from %s recursing into field %d: %s", st, i, svf.Type)
 			UnmarshalEnvironment(lookupenv, sv.Field(i).Interface())
 		}
 		if eval, isset := lookupenv(stv.EnvironmentVariable); isset {
