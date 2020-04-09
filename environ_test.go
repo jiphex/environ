@@ -160,3 +160,52 @@ func TestUnmarshalEnvironment(t *testing.T) {
 		})
 	}
 }
+
+func TestToString(t *testing.T) {
+	type args struct {
+		es interface{}
+	}
+	tests := []struct {
+		name string
+		args args
+		want string
+	}{
+		{
+			name: "basics",
+			args: args{
+				es: TestEnv{
+					Abc: "foo",
+				},
+			},
+			want: "{ Abc:foo Def: Ghi:false Jkl:false Mno:0 Pqr:[] }",
+		},
+		{
+			name: "redact",
+			args: args{
+				es: TestEnv{
+					Abc: "foo",
+					Def: "secretz",
+				},
+			},
+			want: "{ Abc:foo Def:******** Ghi:false Jkl:false Mno:0 Pqr:[] }",
+		},
+		{
+			name: "bool",
+			args: args{
+				es: TestEnv{
+					Abc: "foo",
+					Def: "secretz",
+					Ghi: true,
+				},
+			},
+			want: "{ Abc:foo Def:******** Ghi:true Jkl:false Mno:0 Pqr:[] }",
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if got := ToString(tt.args.es); got != tt.want {
+				t.Errorf("ToString() = %v, want %v", got, tt.want)
+			}
+		})
+	}
+}
